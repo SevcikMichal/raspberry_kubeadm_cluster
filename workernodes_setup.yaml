@@ -1,0 +1,18 @@
+
+
+- name: Raspberry Pi Join Cluster
+  hosts: workernodes
+  become: true
+  vars:
+    controlplane_ip: "{{ groups['controlplane'] | first }}"
+    controlplane_port: "6443"
+
+  tasks:
+  
+    - name: Pull Kubernetes images using kubeadm
+      command: kubeadm config images pull
+
+    - name: Join the cluster
+      command: >
+        kubeadm join {{ controlplane_ip }}:{{ controlplane_port }} --token {{ join_token }} \
+        --discovery-token-ca-cert-hash {{ discovery_token_ca_cert_hash }}
