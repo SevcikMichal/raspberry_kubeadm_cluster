@@ -8,11 +8,19 @@
     controlplane_port: "6443"
 
   tasks:
-  
+    - name: Check whether the worker node has joined the cluster already
+      stat:
+        path: /etc/kubernetes/kubelet.conf
+      register: var_check_k8s_kubelet_conf_file
+      changed_when: false
+
     - name: Pull Kubernetes images using kubeadm
       command: kubeadm config images pull
+      when: not var_check_k8s_kubelet_conf_file.stat.exists
 
-    - name: Join the cluster
-      command: >
-        kubeadm join {{ controlplane_ip }}:{{ controlplane_port }} --token {{ join_token }} \
-        --discovery-token-ca-cert-hash {{ discovery_token_ca_cert_hash }}
+    - name: Use the join command stored in a fact
+      shell: "{{ hostvars[groups['controlplane'][0]]['join_command'] }}"
+      when: not var_check_k8s_kubelet_conf_file.stat.exists
+
+
+      
