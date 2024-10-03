@@ -42,7 +42,7 @@
         flat: yes
 
     - name: Get the join token for the cluster
-      command: "kubeadm token list --no-headers | awk '{print $1}'"
+      command: "kubeadm token list | awk 'NR>1 {print $1}'"
       register: kube_join_token
       # no_log: true
 
@@ -52,7 +52,7 @@
       # no_log: true
 
     - name: Get the CA cert hash for discovery
-      command: "kubeadm token list --no-headers | awk '{print $2}'"
+      command: "openssl x509 -pubkey -in /etc/kubernetes/pki/ca.crt | openssl rsa -pubin -outform der 2>/dev/null | openssl dgst -sha256 -hex | sed 's/^.* //'"
       register: ca_cert_hash_output
       # no_log: true
 
