@@ -1,0 +1,5 @@
+---
+kube_version: "v1.31"
+containerd_version: "1.7.22"
+cni_version: "v1.5.1"
+runc_version: "v1.1.14"

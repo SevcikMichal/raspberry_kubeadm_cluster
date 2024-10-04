@@ -1,0 +1,13 @@
+- name: Check whether the worker node has joined the cluster already
+  stat:
+    path: /etc/kubernetes/kubelet.conf
+  register: join_already_run
+  changed_when: false
+
+- name: Pull Kubernetes images using kubeadm
+  command: kubeadm config images pull
+  when: not join_already_run.stat.exists
+
+- name: Use the join command stored in a fact
+  shell: "{{ hostvars[groups['controlplane'][0]]['join_command'] }}"
+  when: not join_already_run.stat.exists

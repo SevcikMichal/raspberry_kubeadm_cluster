@@ -1,4 +1,0 @@
----
-- import_playbook: common_setup.yaml
-- import_playbook: controlplane_setup.yaml
-- import_playbook: workernodes_setup.yaml

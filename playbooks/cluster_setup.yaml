@@ -1,0 +1,20 @@
+---
+- hosts: all
+  name: Validate and setup hosts
+  become: true
+  roles:
+    - validate
+    - common
+
+- hosts: controlplane
+  name: Setup controlplane
+  become: true
+  roles:
+    - controlplane
+
+- hosts: workernodes
+  name: Setup workernodes
+  become: true
+  roles:
+    - workernodes
+

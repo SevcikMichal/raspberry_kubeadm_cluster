@@ -1,0 +1,6 @@
+[controlplane]
+should.contain.only.one
+
+[workernodes]
+can.contain
+multiple.hosts

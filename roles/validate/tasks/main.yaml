@@ -1,0 +1,16 @@
+---
+- name: Ensure controlplane group contains exactly one host
+  assert:
+    that:
+      - groups['controlplane'] is defined
+      - groups['controlplane'] | length == 1
+    fail_msg: "The controlplane group should contain exactly one host, but found {{ groups['controlplane'] | length }}."
+    success_msg: "Validation passed: controlplane group contains exactly one host."
+
+- name: Ensure workernodes group contains at least one host
+  assert:
+    that:
+      - groups['workernodes'] is defined
+      - groups['workernodes'] | length >= 1
+    fail_msg: "The workernodes group should contain at least one host, but found {{ groups['workernodes'] | length }}."
+    success_msg: "Validation passed: workernodes group contains at least one host."

@@ -1,0 +1,2 @@
+controlplane_ip: "{{ groups['controlplane'] | first }}"
+controlplane_port: "6443"
