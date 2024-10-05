@@ -1,0 +1,75 @@
+---
+- name: Gather system architecture and OS
+  set_fact:
+    flux_architecture: "{{ 'amd64' if ansible_architecture == 'x86_64' else 'arm64' if ansible_architecture == 'aarch64' else 'arm64' if ansible_architecture == 'arm64' else 'unknown' }}"
+    flux_os: "{{ 'linux' if ansible_os_family == 'Debian' or ansible_os_family == 'RedHat' else 'darwin' if ansible_os_family == 'Darwin' else 'unknown' }}"
+
+- name: Fail if the architecture is not supported
+  fail:
+    msg: "Unsupported architecture: {{ ansible_architecture }}"
+  when: flux_architecture == 'unknown'
+
+- name: Fail if the OS is not supported
+  fail:
+    msg: "Unsupported operating system: {{ ansible_os_family }}"
+  when: flux_os == 'unknown'
+
+- name: Print the Flux CLI download URL
+  debug:
+    msg: "Download URL: https://github.com/fluxcd/flux2/releases/download/{{ flux_version }}/flux_{{ flux_version | regex_replace('v', '') }}_{{ flux_os }}_{{ flux_architecture }}.tar.gz"
+
+- name: Download the latest Flux CLI binary for the system architecture and OS
+  get_url:
+    url: "https://github.com/fluxcd/flux2/releases/download/{{ flux_version }}/flux_{{ flux_version | regex_replace('v', '') }}_{{ flux_os }}_{{ flux_architecture }}.tar.gz"
+    dest: /tmp/flux.tar.gz
+
+- name: Extract Flux CLI using GNU tar on Darwin (macOS)
+  when: ansible_os_family == "Darwin"
+  command: "tar -xzf /tmp/flux.tar.gz -C /tmp/"
+
+- name: Extract Flux CLI using regular tar on Linux
+  when: ansible_os_family != "Darwin"
+  ansible.builtin.unarchive:
+    src: /tmp/flux.tar.gz
+    dest: /tmp/
+    remote_src: yes
+
+- name: Install Flux CLI
+  become: true
+  copy:
+    src: /tmp/flux
+    dest: /usr/local/bin/flux
+    mode: '0755'
+
+- name: Clean up
+  file:
+    path: /tmp/flux.tar.gz
+    state: absent
+
+- name: Ensure GitHub token is present
+  fail:
+    msg: "GitHub token not provided! Set it as an environment variable GITHUB_TOKEN."
+  when: github_token == ""
+
+- name: Convert kubeconfig_local_path to absolute path
+  set_fact:
+    kubeconfig_absolute_path: "{{ lookup('pipe', 'realpath ' + kubeconfig_local_path) }}"
+
+
+- name: Bootstrap Flux on GitHub
+  shell: |
+    flux bootstrap github \
+      --owner={{ github_username }} \
+      --repository={{ github_repo }} \
+      --branch={{ github_branch }} \
+      --path={{ github_path }} \
+      --personal \
+      --token-auth \
+      --components-extra=image-reflector-controller,image-automation-controller \
+      --kubeconfig="{{ kubeconfig_absolute_path }}" \
+      --context=kubernetes-admin@kubernetes
+  environment:
+    GITHUB_TOKEN: "{{ github_token }}"
+  args:
+    chdir: /tmp
+  register: flux_bootstrap_output

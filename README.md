@@ -12,6 +12,7 @@ The goal of this project was to learn how Ansible works and apply it to a real-w
 - Applies **common configuration** to all nodes (such as disabling swap, installing container runtimes).
 - Installs and configures Kubernetes components and dependencies.
 - Automatically **joins worker nodes** to the Kubernetes cluster.
+- Installs flux using bootstrap with private repo. Afterwards the management of the cluster is purely done via gitops.
 - Modular structure with **Ansible roles** for common tasks, control plane setup, and worker node setup.
 
 ## Project Structure
@@ -23,11 +24,12 @@ raspberry_kubeadm_cluster/
 │   └── hosts                # Inventory file defining controlplane and workernodes
 ├── playbooks/
 │   └── cluster_setup.yaml   # Main playbook that applies roles to controlplane and workernodes
-├── roles/
-│   ├── common/              # Role for common tasks across all nodes
-│   ├── controlplane/        # Role for control plane specific tasks
-│   ├── validate/            # Role for validating hosts
-│   ├── workernodes/         # Role for worker nodes specific tasks
+└── roles/
+    ├── common/              # Role for common tasks across all nodes
+    ├── controlplane/        # Role for control plane specific tasks
+    ├── flux/                # Role for setting up flux on newly created cluster
+    ├── validate/            # Role for validating hosts
+    └── workernodes/         # Role for worker nodes specific tasks
 ```
 
 ### `ansible.cfg`
@@ -45,12 +47,16 @@ The inventory file specifies which nodes belong to the **controlplane** and **wo
 192.168.1.12
 ```
 
+### `inventory/fluxbootstrap`
+The inventory file specifies variables for bootstrapin flux. Use it to override default values in `roles/flux/vars/main.yaml`.
+
 ### `playbooks/cluster_setup.yaml`
 This is the main playbook that runs the roles for both control plane and worker nodes.
 
 ### Roles
 - **common**: Tasks that are applied to both control plane and worker nodes (e.g., disabling swap, setting up container runtime).
 - **controlplane**: Tasks specific to the control plane, such as initializing Kubernetes and configuring the master node.
+- **flux**: Tasks specific to setting up flux. These are run on the ansible control plane to test out connection to the cluster.
 - **validate**: Tasks specific to validate hosts. There are some assumptions in the later steps that would not work if the expectations are not met.
 - **workernodes**: Tasks specific to worker nodes, such as joining them to the Kubernetes cluster.
 
@@ -99,6 +105,8 @@ This is the main playbook that runs the roles for both control plane and worker 
   
 - **Control Plane Role**: The `controlplane` role handles the initialization of the Kubernetes control plane. It runs `kubeadm init`, installs Flannel as the network plugin, and prepares the control plane for worker nodes to join.
 
+- **Flux Role**: The `flux` role takes care of installing flux on the newly created cluster. It is run on the Ansible controlplane to test out the connection to the cluster from outside. This role is also installing the flux cli onto the system. Therefore sudo password is required use `--ask-become-pass` to input it. This is currently intended by design.
+
 - **Worker Node Role**: The `workernodes` role pulls the required Kubernetes images and runs `kubeadm join` to connect the worker nodes to the control plane.
 
 ## Why This Project?
@@ -112,3 +120,4 @@ Now, the setup is completely automated, reducing the manual steps and ensuring a
 - Add more roles for monitoring, storage, and logging setup.
 - Automate additional configurations like high availability for the control plane.
 - Implement advanced features like deploying applications via Ansible.
+- Get rid of the sudo requirement on runner.

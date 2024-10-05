@@ -1,0 +1,6 @@
+---
+github_username: "default"
+github_repo: "raspberry_cluster_gitops"
+github_branch: "main"
+github_path: "./clusters/rasp_cluster"
+flux_version: "v2.4.0"

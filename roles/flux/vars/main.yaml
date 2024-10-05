@@ -1,0 +1,3 @@
+---
+github_token: "{{ lookup('env', 'GITHUB_TOKEN') }}"
+kubeconfig_local_path: "{{ playbook_dir }}/../out/rasp_cluster_config"
